@@ -23,6 +23,7 @@ import { AuthService } from './auth/auth.service';
 import { TrainingService } from './training/training.service';
 import { initializeApp, provideFirebaseApp } from '@angular/fire/app';
 import { environment } from '../environments/environment';
+import { UIService } from './shared/ui.service';
 
 @NgModule({
   declarations: [
@@ -49,7 +50,7 @@ import { environment } from '../environments/environment';
     provideFirestore(() => getFirestore()),
     provideAuth(() => getAuth()),
   ],
-  providers: [AuthService, TrainingService],
+  providers: [AuthService, TrainingService, UIService],
   bootstrap: [AppComponent],
 })
 export class AppModule {}

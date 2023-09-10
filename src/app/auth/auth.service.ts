@@ -8,9 +8,11 @@ import {
   signOut,
   authState,
 } from '@angular/fire/auth';
+import { MatSnackBar } from '@angular/material/snack-bar';
 
 import { TrainingService } from './../training/training.service';
 import { AuthData } from './auth-data.model';
+import { UIService } from '../shared/ui.service';
 
 @Injectable({
   providedIn: 'root',
@@ -25,7 +27,9 @@ export class AuthService {
   constructor(
     private auth: Auth,
     private router: Router,
-    private trainingService: TrainingService
+    private snackBar: MatSnackBar,
+    private trainingService: TrainingService,
+    private uiService: UIService
   ) {}
 
   //public methods
@@ -44,19 +48,27 @@ export class AuthService {
   }
 
   registerUser(authData: AuthData) {
+    this.uiService.loadingStateChanged.next(true);
     createUserWithEmailAndPassword(
       this.auth!,
       authData.email,
       authData.password
-    ).catch((error) => console.error(error));
+    )
+      .then(() => this.uiService.loadingStateChanged.next(false))
+      .catch((error) => {
+        this.uiService.loadingStateChanged.next(false);
+        this.snackBar.open(error.message, undefined, { duration: 3000 });
+      });
   }
 
   loging(authData: AuthData) {
-    signInWithEmailAndPassword(
-      this.auth!,
-      authData.email,
-      authData.password
-    ).catch((error) => console.error(error));
+    this.uiService.loadingStateChanged.next(true);
+    signInWithEmailAndPassword(this.auth!, authData.email, authData.password)
+      .then(() => this.uiService.loadingStateChanged.next(false))
+      .catch((error) => {
+        this.uiService.loadingStateChanged.next(false);
+        this.snackBar.open(error.message, undefined, { duration: 3000 });
+      });
   }
 
   logout() {
