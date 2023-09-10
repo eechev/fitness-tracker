@@ -1,0 +1,14 @@
+{
+  "targets": {
+    "fitness-project-5525b": {
+      "hosting": {
+        "fitness-tracker": [
+          "fitness-project-5525b"
+        ]
+      }
+    }
+  },
+  "projects": {
+    "default": "fitness-project-5525b"
+  }
+}

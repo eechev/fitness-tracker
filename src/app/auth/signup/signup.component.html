@@ -1,0 +1,73 @@
+<section class="signup">
+  <form
+    fxLayout="column"
+    fxLayoutAlign="center center"
+    fxLayoutGap="10px"
+    #f="ngForm"
+    (ngSubmit)="onSubmit(f)"
+  >
+    <mat-form-field>
+      <input
+        type="email"
+        matInput
+        placeholder="Your email"
+        ngModel
+        name="email"
+        email
+        required
+        #emailInput="ngModel"
+      />
+      <mat-error *ngIf="emailInput.hasError('required')"
+        >Field must not be empty</mat-error
+      >
+      <mat-error *ngIf="!emailInput.hasError('required')"
+        >E-main is invalid!</mat-error
+      >
+    </mat-form-field>
+    <mat-form-field hintLabel="Should be at least 6 characters long.">
+      <input
+        type="password"
+        matInput
+        placeholder="Your password"
+        ngModel
+        name="password"
+        required
+        minlength="6"
+        #pwInput="ngModel"
+      />
+      <mat-hint align="end">{{ pwInput.value?.length }} / 6</mat-hint>
+      <mat-error>Password must be at least 6 characters long</mat-error>
+    </mat-form-field>
+    <mat-form-field>
+      <input
+        matInput
+        placeholder="Your Birthdate"
+        ngModel
+        name="birthdate"
+        required
+        [matDatepicker]="picker"
+        [max]="maxDate"
+      />
+      <mat-datepicker-toggle matTextSuffix [for]="picker" />
+      <mat-datepicker #picker />
+      <mat-error>Please enter your birthdate!</mat-error>
+    </mat-form-field>
+    <mat-checkbox
+      labelPosition="before"
+      ngModel
+      name="agree"
+      required
+      color="primary"
+    >
+      Agree to Terms and Conditions.
+    </mat-checkbox>
+    <button
+      type="submit"
+      mat-raised-button
+      color="primary"
+      [disabled]="f.invalid"
+    >
+      Submit
+    </button>
+  </form>
+</section>
