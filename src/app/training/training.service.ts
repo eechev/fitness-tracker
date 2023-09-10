@@ -19,7 +19,7 @@ export class TrainingService {
   finishedExercisesChanged = new Subject<Exercise[]>();
 
   //private members
-  private availableExercises: Exercise[] = [];
+  private availableExercises?: Exercise[] = [];
   private runningExercise?: Exercise;
   private subs: Subscription[] = [];
 
@@ -46,8 +46,14 @@ export class TrainingService {
           this.uiService.loadingStateChanged.next(false);
         },
         error: (err) => {
-          console.error(`Error from fetchAvailable... ${err}`);
+          this.availableExercises = undefined;
+          this.exercisesChanged.next(this.availableExercises!);
           this.uiService.loadingStateChanged.next(false);
+          this.uiService.showSnackBar(
+            'Fetching available exercises failed. Please try again',
+            null,
+            3000
+          );
         },
       })
     );
@@ -74,12 +80,18 @@ export class TrainingService {
         )
         .subscribe({
           next: (exercises: Exercise[]) => {
-            this.finishedExercisesChanged.next(exercises),
-              this.uiService.loadingStateChanged.next(false);
+            this.finishedExercisesChanged.next(exercises);
+            this.uiService.loadingStateChanged.next(false);
           },
           error: (err) => {
-            console.error(`Error from fetchCompleted... ${err}`),
-              this.uiService.loadingStateChanged.next(false);
+            const exercise = undefined;
+            this.finishedExercisesChanged.next(exercise!);
+            this.uiService.loadingStateChanged.next(false);
+            this.uiService.showSnackBar(
+              'Fetching completed or cancelled exercises failed. Please try again',
+              null,
+              3000
+            );
           },
         })
     );
@@ -87,7 +99,7 @@ export class TrainingService {
 
   //public methods
   startExercise(selectedId: string) {
-    this.runningExercise = this.availableExercises.find(
+    this.runningExercise = this.availableExercises!.find(
       (ex) => ex.id === selectedId
     );
     this.exerciseChanged.next(this.runningExercise!);

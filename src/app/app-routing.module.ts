@@ -1,20 +1,16 @@
-import { NgModule } from '@angular/core';
+import { NgModule, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Routes, RouterModule } from '@angular/router';
 import { WelcomeComponent } from './welcome/welcome.component';
-import { SignupComponent } from './auth/signup/signup.component';
-import { LoginComponent } from './auth/login/login.component';
-import { TrainingComponent } from './training/training.component';
-import { AuthGuard, PermissionService } from './auth/auth.guard';
+import { AuthService } from './auth/auth.service';
 
 const routes: Routes = [
   { path: '', component: WelcomeComponent },
-  { path: 'signup', component: SignupComponent },
-  { path: 'login', component: LoginComponent },
   {
     path: 'training',
-    component: TrainingComponent,
-    canActivate: [AuthGuard],
+    canMatch: [() => inject(AuthService).isAuth()],
+    loadChildren: () =>
+      import('./training/training.module').then((m) => m.TrainingModule),
   },
 ];
 
@@ -22,6 +18,6 @@ const routes: Routes = [
   declarations: [],
   imports: [CommonModule, RouterModule.forRoot(routes)],
   exports: [RouterModule],
-  providers: [PermissionService],
+  providers: [],
 })
 export class AppRoutingModule {}
