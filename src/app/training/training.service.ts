@@ -9,14 +9,13 @@ import {
 } from '@angular/fire/firestore';
 
 import { Exercise } from './exercide.model';
+import { UIService } from '../shared/ui.service';
 
 @Injectable()
 export class TrainingService {
   //Events emiters
   exerciseChanged = new Subject<Exercise>();
   exercisesChanged = new Subject<Exercise[]>();
-
-  //properties
   finishedExercisesChanged = new Subject<Exercise[]>();
 
   //private members
@@ -25,7 +24,7 @@ export class TrainingService {
   private subs: Subscription[] = [];
 
   //constructors, initializers and cleaners
-  constructor(private firestore: Firestore) {}
+  constructor(private firestore: Firestore, private uiService: UIService) {}
 
   //getters and setters
   getRunningExercise(): Exercise {
@@ -33,6 +32,7 @@ export class TrainingService {
   }
 
   fetchAvailableExercises() {
+    this.uiService.loadingStateChanged.next(true);
     const exerciseCollection = collection(this.firestore, 'availableExercises');
     this.subs.push(
       (
@@ -43,13 +43,18 @@ export class TrainingService {
         next: (result: Exercise[]) => {
           this.availableExercises = result;
           this.exercisesChanged.next([...this.availableExercises]);
+          this.uiService.loadingStateChanged.next(false);
         },
-        error: (err) => console.error(`Error from fetchAvailable... ${err}`),
+        error: (err) => {
+          console.error(`Error from fetchAvailable... ${err}`);
+          this.uiService.loadingStateChanged.next(false);
+        },
       })
     );
   }
 
   fetchCompletedOrCancelledExercises() {
+    this.uiService.loadingStateChanged.next(true);
     const exerciseCollection = collection(this.firestore, 'finishedExercises');
     this.subs.push(
       collectionData(exerciseCollection, { idField: 'id' })
@@ -68,9 +73,14 @@ export class TrainingService {
           })
         )
         .subscribe({
-          next: (exercises: Exercise[]) =>
+          next: (exercises: Exercise[]) => {
             this.finishedExercisesChanged.next(exercises),
-          error: (err) => console.error(`Error from fetchCompleted... ${err}`),
+              this.uiService.loadingStateChanged.next(false);
+          },
+          error: (err) => {
+            console.error(`Error from fetchCompleted... ${err}`),
+              this.uiService.loadingStateChanged.next(false);
+          },
         })
     );
   }

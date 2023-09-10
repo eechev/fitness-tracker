@@ -8,7 +8,6 @@ import {
   signOut,
   authState,
 } from '@angular/fire/auth';
-import { MatSnackBar } from '@angular/material/snack-bar';
 
 import { TrainingService } from './../training/training.service';
 import { AuthData } from './auth-data.model';
@@ -27,7 +26,6 @@ export class AuthService {
   constructor(
     private auth: Auth,
     private router: Router,
-    private snackBar: MatSnackBar,
     private trainingService: TrainingService,
     private uiService: UIService
   ) {}
@@ -57,7 +55,7 @@ export class AuthService {
       .then(() => this.uiService.loadingStateChanged.next(false))
       .catch((error) => {
         this.uiService.loadingStateChanged.next(false);
-        this.snackBar.open(error.message, undefined, { duration: 3000 });
+        this.uiService.showSnackBar(error.message, undefined, 3000);
       });
   }
 
@@ -67,7 +65,7 @@ export class AuthService {
       .then(() => this.uiService.loadingStateChanged.next(false))
       .catch((error) => {
         this.uiService.loadingStateChanged.next(false);
-        this.snackBar.open(error.message, undefined, { duration: 3000 });
+        this.uiService.showSnackBar(error.message, undefined, 3000);
       });
   }
 
