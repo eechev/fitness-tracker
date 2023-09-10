@@ -1,18 +1,27 @@
 import { inject } from '@angular/core';
 import { Subject } from 'rxjs';
 import { map } from 'rxjs/operators';
-import { Firestore, collection, collectionData } from '@angular/fire/firestore';
+import {
+  Firestore,
+  collection,
+  collectionData,
+  addDoc,
+} from '@angular/fire/firestore';
 
 import { Exercise } from './exercide.model';
 
 export class TrainingService {
   exerciseChanged = new Subject<Exercise>();
   exercisesChanged = new Subject<Exercise[]>();
+  finishedExercisesChanged = new Subject<Exercise[]>();
   private availableExercises: Exercise[] = [];
   private runningExercise?: Exercise;
-  private exercises: Exercise[] = [];
 
   db = inject(Firestore);
+
+  getRunningExercise(): Exercise {
+    return { ...this.runningExercise! };
+  }
 
   fetchAvailableExercises() {
     const exerciseCollection = collection(this.db, 'availableExercises');
@@ -35,12 +44,26 @@ export class TrainingService {
       });
   }
 
-  getRunningExercise(): Exercise {
-    return { ...this.runningExercise! };
-  }
-
-  getCompletedOrCancelledExercises(): Exercise[] {
-    return this.exercises.slice();
+  fetchCompletedOrCancelledExercises() {
+    const exerciseCollection = collection(this.db, 'finishedExercises');
+    collectionData(exerciseCollection, { idField: 'id' })
+      .pipe(
+        map((valArray) => {
+          return valArray.map((val) => {
+            return {
+              id: val.id,
+              name: val['name'],
+              duration: val['duration'],
+              calories: val['calories'],
+              state: val['state'],
+              date: val['date'].toDate(),
+            };
+          });
+        })
+      )
+      .subscribe((exercises: Exercise[]) => {
+        this.finishedExercisesChanged.next(exercises);
+      });
   }
 
   startExercise(selectedId: string) {
@@ -51,7 +74,7 @@ export class TrainingService {
   }
 
   completeExercise() {
-    this.exercises.push({
+    this.addExerciseToDatabase({
       ...this.runningExercise!,
       date: new Date(),
       state: 'completed',
@@ -61,7 +84,7 @@ export class TrainingService {
   }
 
   cancelExercise(progress: number) {
-    this.exercises.push({
+    this.addExerciseToDatabase({
       ...this.runningExercise!,
       date: new Date(),
       state: 'cancelled',
@@ -70,5 +93,12 @@ export class TrainingService {
     });
     this.runningExercise = undefined;
     this.exerciseChanged.next(this.runningExercise!);
+  }
+
+  private addExerciseToDatabase(exercise: Exercise) {
+    const exerciseCollection = collection(this.db, 'finishedExercises');
+    addDoc(exerciseCollection, exercise).then(() => {
+      console.log('Data saved successfully');
+    });
   }
 }
