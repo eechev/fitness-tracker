@@ -13,7 +13,8 @@ const routes: Routes = [
   { path: 'login', component: LoginComponent },
   {
     path: 'training',
-    component: TrainingComponent /* canActivate: [AuthGuard] */,
+    component: TrainingComponent,
+    canActivate: [AuthGuard],
   },
 ];
 

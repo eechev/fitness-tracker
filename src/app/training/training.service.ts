@@ -1,6 +1,6 @@
-import { inject } from '@angular/core';
-import { Subject } from 'rxjs';
+import { Observable, Subject, Subscription } from 'rxjs';
 import { map } from 'rxjs/operators';
+import { Injectable } from '@angular/core';
 import {
   Firestore,
   collection,
@@ -10,62 +10,72 @@ import {
 
 import { Exercise } from './exercide.model';
 
+@Injectable()
 export class TrainingService {
+  //Events emiters
   exerciseChanged = new Subject<Exercise>();
   exercisesChanged = new Subject<Exercise[]>();
+
+  //properties
   finishedExercisesChanged = new Subject<Exercise[]>();
+
+  //private members
   private availableExercises: Exercise[] = [];
   private runningExercise?: Exercise;
+  private subs: Subscription[] = [];
 
-  db = inject(Firestore);
+  //constructors, initializers and cleaners
+  constructor(private firestore: Firestore) {}
 
+  //getters and setters
   getRunningExercise(): Exercise {
     return { ...this.runningExercise! };
   }
 
   fetchAvailableExercises() {
-    const exerciseCollection = collection(this.db, 'availableExercises');
-    collectionData(exerciseCollection, { idField: 'id' })
-      .pipe(
-        map((valArray) => {
-          return valArray.map((val) => {
-            return {
-              id: val.id,
-              name: val['name'],
-              duration: val['duration'],
-              calories: val['calories'],
-            };
-          });
-        })
-      )
-      .subscribe((result: Exercise[]) => {
-        this.availableExercises = result;
-        this.exercisesChanged.next([...this.availableExercises]);
-      });
+    const exerciseCollection = collection(this.firestore, 'availableExercises');
+    this.subs.push(
+      (
+        collectionData(exerciseCollection, {
+          idField: 'id',
+        }) as Observable<Exercise[]>
+      ).subscribe({
+        next: (result: Exercise[]) => {
+          this.availableExercises = result;
+          this.exercisesChanged.next([...this.availableExercises]);
+        },
+        error: (err) => console.error(`Error from fetchAvailable... ${err}`),
+      })
+    );
   }
 
   fetchCompletedOrCancelledExercises() {
-    const exerciseCollection = collection(this.db, 'finishedExercises');
-    collectionData(exerciseCollection, { idField: 'id' })
-      .pipe(
-        map((valArray) => {
-          return valArray.map((val) => {
-            return {
-              id: val.id,
-              name: val['name'],
-              duration: val['duration'],
-              calories: val['calories'],
-              state: val['state'],
-              date: val['date'].toDate(),
-            };
-          });
+    const exerciseCollection = collection(this.firestore, 'finishedExercises');
+    this.subs.push(
+      collectionData(exerciseCollection, { idField: 'id' })
+        .pipe(
+          map((valArray) => {
+            return valArray.map((val) => {
+              return {
+                id: val.id,
+                name: val['name'],
+                duration: val['duration'],
+                calories: val['calories'],
+                state: val['state'],
+                date: val['date'].toDate(),
+              };
+            });
+          })
+        )
+        .subscribe({
+          next: (exercises: Exercise[]) =>
+            this.finishedExercisesChanged.next(exercises),
+          error: (err) => console.error(`Error from fetchCompleted... ${err}`),
         })
-      )
-      .subscribe((exercises: Exercise[]) => {
-        this.finishedExercisesChanged.next(exercises);
-      });
+    );
   }
 
+  //public methods
   startExercise(selectedId: string) {
     this.runningExercise = this.availableExercises.find(
       (ex) => ex.id === selectedId
@@ -95,10 +105,13 @@ export class TrainingService {
     this.exerciseChanged.next(this.runningExercise!);
   }
 
+  cancelSubscriptions() {
+    this.subs.forEach((sub) => sub.unsubscribe());
+  }
+
+  //private methods
   private addExerciseToDatabase(exercise: Exercise) {
-    const exerciseCollection = collection(this.db, 'finishedExercises');
-    addDoc(exerciseCollection, exercise).then(() => {
-      console.log('Data saved successfully');
-    });
+    const exerciseCollection = collection(this.firestore, 'finishedExercises');
+    addDoc(exerciseCollection, exercise).catch((err) => console.error(err));
   }
 }
